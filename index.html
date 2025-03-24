@@ -27,7 +27,7 @@
 
         <!-- Items Table -->
         <div class="mt-6 overflow-x-auto">
-            <table class="w-full border-collapse border border-gray-300 text-sm sm:text-base" id="itemsTable">
+            <table class="w-full min-w-[600px] border-collapse border border-gray-300 text-sm sm:text-base" id="itemsTable">
                 <thead>
                     <tr class="bg-gray-200 text-gray-700">
                         <th class="border border-gray-300 p-2">#</th>
@@ -152,17 +152,12 @@
             const mobileNumber = document.getElementById("mobileNumber").value || "N/A";
             const address = document.getElementById("address").value || "N/A";
 
-
-            // Right-align the financial information
-            const leftMargin = doc.internal.pageSize.width - 195;
-
-            // Use leftMargin for consistent left alignment
-            doc.text(`Invoice #: ${invoiceNumber}`, leftMargin, 40);
-            doc.text(`Date: ${invoiceDate}`, leftMargin, 45);
-            doc.text(`Due Date: ${dueDate}`, leftMargin, 50);
-            doc.text(`Bill To: ${billTo}`, leftMargin, 55);
-            doc.text(`Address: ${address}`, leftMargin, 60);
-            doc.text(`Mobile: ${mobileNumber}`, leftMargin, 65);
+            doc.text(`Invoice #: ${invoiceNumber}`, 10, 40);
+            doc.text(`Date: ${invoiceDate}`, 10, 45);
+            doc.text(`Due Date: ${dueDate}`, 10, 50);
+            doc.text(`Bill To: ${billTo}`, 10, 55);
+            doc.text(`Address: ${address}`, 10, 60);
+            doc.text(`Mobile: ${mobileNumber}`, 10, 65);
 
             // Items Table
             const rows = [];
