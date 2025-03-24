@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Invoice Generator</title>
+    <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.5.23/dist/jspdf.plugin.autotable.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 p-6 font-sans">
+    <div class="max-w-7xl mx-auto bg-white p-6 rounded-lg shadow-lg border border-gray-200">
+        <!-- Header Section -->
+        <h2 class="text-2xl font-bold mb-4 text-center text-blue-600 sm:text-3xl">FM TRADE INTERNATIONAL</h2>
+        <p class="text-sm text-center text-gray-600 sm:text-base">Shewrapara, Mirpur, Dhaka -1216 | 01620541999</p>
+        <h3 class="text-xl font-semibold mt-6 text-center text-green-600 sm:text-2xl">INVOICE</h3>
+
+        <!-- Invoice Details Form -->
+        <div class="grid grid-cols-1 gap-4 mt-6 sm:grid-cols-2">
+            <input type="text" id="invoiceNumber" placeholder="Invoice #" class="p-3 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm sm:text-base">
+            <input type="date" id="invoiceDate" class="p-3 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm sm:text-base">
+            <input type="date" id="dueDate" placeholder="Due Date" class="p-3 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm sm:text-base">
+            <input type="text" id="billTo" placeholder="Bill To" class="p-3 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm sm:text-base">
+            <input type="text" id="address" placeholder="Address" class="p-3 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm sm:text-base">
+            <input type="text" id="mobileNumber" placeholder="Mobile Number" class="p-3 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm sm:text-base">
+        </div>
+
+        <!-- Items Table -->
+        <div class="mt-6 overflow-x-auto">
+            <table class="w-full border-collapse border border-gray-300 text-sm sm:text-base" id="itemsTable">
+                <thead>
+                    <tr class="bg-gray-200 text-gray-700">
+                        <th class="border border-gray-300 p-2">#</th>
+                        <th class="border border-gray-300 p-2">Item</th>
+                        <th class="border border-gray-300 p-2">Qty</th>
+                        <th class="border border-gray-300 p-2">Unit</th>
+                        <th class="border border-gray-300 p-2">Unit Cost (Tk.)</th>
+                        <th class="border border-gray-300 p-2">Total (Tk.)</th>
+                        <th class="border border-gray-300 p-2 hidden sm:table-cell">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Add Item Button -->
+        <button onclick="addItem()" class="mt-4 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition duration-300 text-sm sm:text-base w-full sm:w-auto">
+            Add Item
+        </button>
+
+        <!-- Financial Summary -->
+        <div class="mt-6 text-right text-sm sm:text-base">
+            <p class="text-gray-700">Subtotal: <span id="subtotal" class="font-bold text-blue-600">0</span> Tk.</p>
+            <p class="text-gray-700">Total: <span id="totalAmount" class="font-bold text-green-600">0</span> Tk.</p>
+            <p class="text-gray-700">Paid: 
+                <input type="number" id="paidAmount" class="border border-gray-300 p-2 w-24 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm sm:text-base" oninput="calculateBalance()"> Tk.
+            </p>
+            <p class="text-gray-700">Balance Due: <span id="balanceDue" class="font-bold text-red-600">0</span> Tk.</p>
+        </div>
+
+        <!-- Download PDF Button -->
+        <button onclick="generatePDF()" class="mt-4 bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600 transition duration-300 text-sm sm:text-base w-full sm:w-auto">
+            Download PDF
+        </button>
+    </div>
+
+    <script>
+        // Add a new item row to the table
+        function addItem() {
+            const table = document.querySelector("#itemsTable tbody");
+            const row = document.createElement("tr");
+            row.innerHTML = `
+                <td class="border border-gray-300 p-2">${table.children.length + 1}</td>
+                <td class="border border-gray-300 p-2 sm:p-4"><input type="text" class="w-full p-1 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm sm:text-base"></td>
+                <td class="border border-gray-300 p-2 sm:p-4"><input type="number" class="w-full p-1 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm sm:text-base" oninput="updateTotal()"></td>
+                <td class="border border-gray-300 p-2 sm:p-4">
+                    <select class="w-full p-1 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm sm:text-base">
+                        <option value="pcs">pcs</option>
+                        <option value="kg">kg</option>
+                        <option value="box">box</option>
+                        <option value="Cotton">Cotton</option>
+                    </select>
+                </td>
+                <td class="border border-gray-300 p-2 sm:p-4"><input type="number" class="w-full p-1 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm sm:text-base" oninput="updateTotal()"></td>
+                <td class="border border-gray-300 p-2 sm:p-4 total">0</td>
+                <td class="border border-gray-300 p-2 sm:p-4 text-center hidden sm:table-cell"><button onclick="removeItem(this)" class="text-red-500 hover:text-red-700 transition duration-300 text-sm sm:text-base">X</button></td>
+            `;
+            table.appendChild(row);
+        }
+
+        // Remove an item row
+        function removeItem(btn) {
+            const row = btn.parentElement.parentElement;
+            row.remove();
+            updateTotal(); // Recalculate totals after removing the row
+        }
+
+        // Update totals dynamically
+        function updateTotal() {
+            let subtotal = 0;
+            document.querySelectorAll("#itemsTable tbody tr").forEach((row, index) => {
+                const qty = parseFloat(row.children[2].children[0].value) || 0; // Qty input
+                const unitCost = parseFloat(row.children[4].children[0].value) || 0; // Unit cost input
+                const totalCell = row.children[5]; // Total cell
+
+                const rowTotal = qty * unitCost;
+                totalCell.textContent = isNaN(rowTotal) ? 0 : rowTotal.toFixed(2);
+                subtotal += rowTotal;
+
+                // Update the # column dynamically
+                row.children[0].textContent = index + 1;
+            });
+            document.getElementById("subtotal").textContent = subtotal.toFixed(2);
+            document.getElementById("totalAmount").textContent = subtotal.toFixed(2);
+            calculateBalance(); // Update balance due
+        }
+
+        // Calculate balance due
+        function calculateBalance() {
+            const total = parseFloat(document.getElementById("totalAmount").textContent) || 0;
+            const paid = parseFloat(document.getElementById("paidAmount").value) || 0;
+            document.getElementById("balanceDue").textContent = (total - paid).toFixed(2);
+        }
+
+        // Generate PDF in A4 size
+        function generatePDF() {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF({ format: 'a4' });
+
+            // Add Header
+            doc.setFontSize(18);
+            doc.setTextColor(0, 102, 204); // Blue color
+            doc.text("FM TRADE INTERNATIONAL", doc.internal.pageSize.width / 2, 10, { align: 'center' });
+
+            doc.setFontSize(12);
+            doc.setTextColor(102, 102, 102); // Gray color
+            doc.text("Shewrapara, Mirpur, Dhaka-1216", doc.internal.pageSize.width / 2, 15, { align: 'center' });
+            doc.text("01620541999", doc.internal.pageSize.width / 2, 20, { align: 'center' });
+
+            doc.setFontSize(14);
+            doc.setTextColor(0, 153, 51); // Green color
+            doc.text("INVOICE", doc.internal.pageSize.width / 2, 30, { align: 'center' });
+
+            // Invoice Details
+            doc.setFontSize(12);
+            doc.setTextColor(0, 0, 0); // Black color
+            const invoiceNumber = document.getElementById("invoiceNumber").value || "N/A";
+            const invoiceDate = document.getElementById("invoiceDate").value || "N/A";
+            const dueDate = document.getElementById("dueDate").value || "N/A";
+            const billTo = document.getElementById("billTo").value || "N/A";
+            const mobileNumber = document.getElementById("mobileNumber").value || "N/A";
+            const address = document.getElementById("address").value || "N/A";
+
+
+            // Right-align the financial information
+            const leftMargin = doc.internal.pageSize.width - 195;
+
+            // Use leftMargin for consistent left alignment
+            doc.text(`Invoice #: ${invoiceNumber}`, leftMargin, 40);
+            doc.text(`Date: ${invoiceDate}`, leftMargin, 45);
+            doc.text(`Due Date: ${dueDate}`, leftMargin, 50);
+            doc.text(`Bill To: ${billTo}`, leftMargin, 55);
+            doc.text(`Address: ${address}`, leftMargin, 60);
+            doc.text(`Mobile: ${mobileNumber}`, leftMargin, 65);
+
+            // Items Table
+            const rows = [];
+            rows.push(["#", "Item", "Qty", "Unit", "Unit Cost (Tk.)", "Total (Tk.)"]); // Header row
+
+            document.querySelectorAll("#itemsTable tbody tr").forEach((row, index) => {
+                const item = row.children[1].children[0].value || ""; // Item input
+                const qty = parseFloat(row.children[2].children[0].value) || 0; // Qty input
+                const unit = row.children[3].children[0].value || ""; // Selected unit
+                const unitCost = parseFloat(row.children[4].children[0].value) || 0; // Unit cost input
+                const total = parseFloat(row.children[5].textContent) || 0; // Total cell
+
+                rows.push([index + 1, item, qty, unit, unitCost.toFixed(2), total.toFixed(2)]);
+            });
+
+            // Auto-table plugin for better table formatting
+            doc.autoTable({
+                head: [rows[0]], // Header row
+                body: rows.slice(1), // Data rows
+                startY: 70,
+                theme: 'grid',
+                styles: { fontSize: 10 },
+                headStyles: { fillColor: [204, 204, 204], textColor: [0, 0, 0] }, // Light gray header background
+                alternateRowStyles: { fillColor: [245, 245, 245] }, // Alternating row color
+                columnStyles: {
+                    0: { cellWidth: 10 }, // #
+                    1: { cellWidth: 60 }, // Item
+                    2: { cellWidth: 20 }, // Qty
+                    3: { cellWidth: 20 }, // Unit
+                    4: { cellWidth: 30 }, // Unit Cost
+                    5: { cellWidth: 30 }, // Total
+                }
+            });
+
+            // Subtotal, Total, Paid, Balance Due
+            const subtotal = parseFloat(document.getElementById("subtotal").textContent) || 0;
+            const paid = parseFloat(document.getElementById("paidAmount").value) || 0;
+            const balanceDue = subtotal - paid;
+
+            const yPos = doc.lastAutoTable.finalY + 10; // Position after the table
+
+            // Right-align the financial information
+            const rightMargin = doc.internal.pageSize.width - 30;
+            doc.setTextColor(0, 102, 204); // Blue color
+            doc.text(`Subtotal: Tk.${subtotal.toFixed(2)}`, rightMargin, yPos, { align: 'right' });
+            doc.setTextColor(0, 153, 51); // Green color
+            doc.text(`Total: Tk.${subtotal.toFixed(2)}`, rightMargin, yPos + 5, { align: 'right' });
+            doc.setTextColor(0, 0, 0); // Black color
+            doc.text(`Paid: Tk.${paid.toFixed(2)}`, rightMargin, yPos + 10, { align: 'right' });
+            doc.setTextColor(204, 0, 0); // Red color
+            doc.text(`Balance Due: Tk.${balanceDue.toFixed(2)}`, rightMargin, yPos + 15, { align: 'right' });
+
+            // Add footer
+            const pageCount = doc.internal.getNumberOfPages();
+            for (let i = 1; i <= pageCount; i++) {
+                doc.setPage(i);
+                doc.setFontSize(10);
+                doc.setTextColor(102, 102, 102); // Gray color
+                doc.text('Thank you for your business!', doc.internal.pageSize.width / 2, doc.internal.pageSize.height - 10, { align: 'center' });
+            }
+
+            // Set filename with invoice number and date
+            let filename = "invoice";
+            if (invoiceNumber) {
+                filename += `-${invoiceNumber}`;
+            }
+            if (invoiceDate) {
+                filename += `-${invoiceDate}`;
+            }
+            filename += ".pdf";
+
+            // Save the PDF
+            doc.save(filename);
+        }
+
+        // Initialize with current date
+        window.onload = function () {
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('invoiceDate').value = today;
+
+            // Add one item row by default
+            addItem();
+        };
+    </script>
+</body>
+</html>
