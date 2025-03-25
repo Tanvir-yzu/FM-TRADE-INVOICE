@@ -152,12 +152,14 @@
             const mobileNumber = document.getElementById("mobileNumber").value || "N/A";
             const address = document.getElementById("address").value || "N/A";
 
-            doc.text(`Invoice #: ${invoiceNumber}`, 10, 40);
-            doc.text(`Date: ${invoiceDate}`, 10, 45);
-            doc.text(`Due Date: ${dueDate}`, 10, 50);
-            doc.text(`Bill To: ${billTo}`, 10, 55);
-            doc.text(`Address: ${address}`, 10, 60);
-            doc.text(`Mobile: ${mobileNumber}`, 10, 65);
+            const leftMargin = doc.internal.pageSize.width - 195;
+            // Use leftMargin for consistent left alignment
+            doc.text(`Invoice #: ${invoiceNumber}`, leftMargin, 40);
+            doc.text(`Date: ${invoiceDate}`, leftMargin, 45);
+            doc.text(`Due Date: ${dueDate}`, leftMargin, 50);
+            doc.text(`Bill To: ${billTo}`, leftMargin, 55);
+            doc.text(`Address: ${address}`, leftMargin, 60);
+            doc.text(`Mobile: ${mobileNumber}`, leftMargin, 65);
 
             // Items Table
             const rows = [];
